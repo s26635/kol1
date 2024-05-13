@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
+using Kol1.DTO;
 using Kol1.Interfaces;
 using Kol1.Models;
 using Microsoft.Extensions.Configuration;
@@ -59,7 +61,61 @@ public class MusicianRepository : IMusicianRepository
                 Songs = songs
             };
         }
+    }
+
+    public async Task<MusicianSongs> AddMusicianSongs(MusicianSongsDTO musicianSongsDto)
+    {
+        using (SqlConnection connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]))
+        {
+            await connection.OpenAsync();
+            await using SqlCommand command = new SqlCommand();
+            command.Connection = connection;
+            DbTransaction dbTransaction = await connection.BeginTransactionAsync();
+            command.Transaction = dbTransaction as SqlTransaction;
+            try
+            {
+                command.CommandText =
+                    "insert into Muzyk(imie, nazwisko, pseudonim) values (@Imie, @Nazwisko, @Pseudonim)";
+                command.Parameters.AddWithValue("@Imie", musicianSongsDto.Name);
+                command.Parameters.AddWithValue("@Nazwisko", musicianSongsDto.Surname);
+                command.Parameters.AddWithValue("@Pseudonim", musicianSongsDto.SceneName);
+                MusicianSongs musicianSongs = new MusicianSongs()
+                {
+                    Name = musicianSongsDto.Name,
+                    Surname = musicianSongsDto.Surname,
+                    SceneName = musicianSongsDto.SceneName
+                };
+                int musicianId = GetId(musicianSongs);
+                int songId = musicianSongsDto.Songs;
+
+                command.CommandText = "INSERT INTO WykonawcaUtworu (idmuzyk, idutwor) " +
+                                      "VALUES (@idmuzyk,@idutwor);";
+                command.Parameters.AddWithValue("@idmuzyk", musicianId);
+                command.Parameters.AddWithValue("@idutwor", songId);
+                await command.ExecuteNonQueryAsync();
+
+
+                dbTransaction.Commit();
+                return new MusicianSongs()
+                {
+                    IdMusician = musicianId,
+                    Name = musicianSongsDto.Name,
+                    SceneName = musicianSongsDto.SceneName,
+                    Songs = null
+                };
+            }
+            catch (ArgumentException e)
+            {
+                dbTransaction.Rollback();
+                Console.WriteLine(e);
+            }
+        }
 
         return null;
+    }
+
+    public int GetId(MusicianSongs musicianSongs)
+    {
+        return 0;
     }
 }

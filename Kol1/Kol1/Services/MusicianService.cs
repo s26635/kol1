@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Kol1.DTO;
 using Kol1.Interfaces;
 using Kol1.Models;
 
@@ -16,5 +17,10 @@ public class MusicianService : IMusicianService
     public Task<MusicianSongs> GetMusicianSongsById(int id)
     {
         return _musicianRepository.GetMusicianSongsById(id);
+    }
+
+    public Task<MusicianSongs> AddMusicianSongs(MusicianSongsDTO musicianSongsDto)
+    {
+        return _musicianRepository.AddMusicianSongs(musicianSongsDto);
     }
 }
