@@ -2,7 +2,8 @@
 
 public class Song
 {
-    private string IdSong { set; get; }
+    public int IdSong { set; get; }
     public float Duration { set; get; }
-    int Album { set; get; }
+    public string SongName { set; get; }
+    public int Album { set; get; }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Kol1.Interfaces;
@@ -24,28 +25,29 @@ public class MusicianRepository : IMusicianRepository
             await using var command = new SqlCommand();
             command.Connection = connection;
             await connection.OpenAsync();
-            command.CommandText = "select Imie, Nazwisko, Pseudonim, u.NazwaUtworu, u.CzasTrwania, u.IdAlbum from Muzyk " +
-                                  "INNER JOIN WykonawcaUtworu WU on Muzyk.IdMuzyk = WU.IdMuzyk " +
-                                  "Inner Join Utwor U on WU.IdUtwor = U.IdUtwor where Muzyk.IdMuzyk = @id";
+            command.CommandText =
+                "select Imie, Nazwisko, Pseudonim,u.IdUtwor, u.NazwaUtworu, u.CzasTrwania, u.IdAlbum from Muzyk " +
+                "INNER JOIN WykonawcaUtworu WU on Muzyk.IdMuzyk = WU.IdMuzyk " +
+                "Inner Join Utwor U on WU.IdUtwor = U.IdUtwor where Muzyk.IdMuzyk = @id";
             command.Parameters.AddWithValue("@id", id);
             var name = "";
             var surname = "";
             var sceneName = "";
+            IList<Song> songs = new List<Song>();
             SqlDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-            name = reader["Imie"].ToString();
-            surname = reader["Nazwisko"].ToString();
-            sceneName = reader["Pseudonim"].ToString();
-
-            
-                // localTitle = reader.GetValue(title).ToString();
-                // localGeners.Add(reader.GetValue(name).ToString());
-                
-                Song song = new Song()
+                name = reader["Imie"].ToString();
+                surname = reader["Nazwisko"].ToString();
+                sceneName = reader["Pseudonim"].ToString();
+                float val = Convert.ToSingle(reader["CzasTrwania"].ToString());
+                songs.Add(new Song()
                 {
-                    
-                };
+                    IdSong = (int)reader["IdUtwor"],
+                    Duration = val,
+                    SongName = (string)reader["NazwaUtworu"],
+                    Album = (int)reader["IdAlbum"]
+                });
             }
 
             return new MusicianSongs()
@@ -54,7 +56,7 @@ public class MusicianRepository : IMusicianRepository
                 Name = name,
                 Surname = surname,
                 SceneName = sceneName,
-                Songs = null
+                Songs = songs
             };
         }
 
